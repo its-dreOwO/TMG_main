@@ -1,4 +1,4 @@
-"""Fine-tune a transformer risk classifier on Modal GPUs.
+"""Fine-tune a transformer risk classifier on Modal GPUs (an RTX PRO 6000 by default, see GPU below).
 
 Modal downloads the public CUAD/LEDGAR datasets from Kaggle itself and builds the
 splits on volume `legal-clause-data`; no contract text ever leaves the local machine.
@@ -43,6 +43,7 @@ RAW = Path("/data/raw")
 DATA = Path("/data/processed")
 MODELS = Path("/models")
 SEED = 42
+GPU = "RTX-PRO-6000"  # Modal GPU type string, see https://modal.com/docs/guide/gpu
 
 
 @app.function(image=data_image, timeout=3600, cpu=4, memory=8192,
@@ -78,9 +79,9 @@ def _limit(df, n: int, n_classes: int):
     return pd.concat([g.sample(min(len(g), per), random_state=SEED) for _, g in df.groupby("label")])
 
 
-@app.function(image=image, gpu="T4", timeout=4 * 3600, retries=2,
+@app.function(image=image, gpu=GPU, timeout=4 * 3600, retries=2,
               volumes={"/data": data_vol, "/models": model_vol})
-def train(model_name: str, run_name: str, epochs: int = 3, lr: float = 2e-5, batch_size: int = 32,
+def train(model_name: str, run_name: str, epochs: int = 3, lr: float = 2e-5, batch_size: int = 64,
           max_length: int = 256, max_samples: int = 0) -> dict:
     """max_samples=0 means use all rows."""
     import numpy as np
@@ -131,10 +132,12 @@ def train(model_name: str, run_name: str, epochs: int = 3, lr: float = 2e-5, bat
 
     run_dir = MODELS / run_name
     ckpt_dir = run_dir / "ckpt"
+    bf16 = torch.cuda.is_bf16_supported()
+    print("mixed precision:", "bf16" if bf16 else "fp16", "batch_size:", batch_size)
     args = TrainingArguments(
         output_dir=str(ckpt_dir), num_train_epochs=epochs, learning_rate=lr,
         per_device_train_batch_size=batch_size, per_device_eval_batch_size=batch_size * 2,
-        warmup_ratio=0.06, weight_decay=0.01, fp16=True, seed=SEED,
+        warmup_ratio=0.06, weight_decay=0.01, bf16=bf16, fp16=not bf16, seed=SEED,
         eval_strategy="epoch", save_strategy="epoch", save_total_limit=2,
         load_best_model_at_end=True, metric_for_best_model="eval_macro_f1", greater_is_better=True,
         logging_steps=100, report_to=[], dataloader_num_workers=2,
