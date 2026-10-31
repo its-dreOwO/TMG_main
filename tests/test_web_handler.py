@@ -158,3 +158,17 @@ def test_dynamo_counter_day_limit_refunds_month():
     with stub:
         assert counter.try_consume("2026-11-01", "2026-11") is False
     stub.assert_no_pending_responses()
+
+
+def test_quota_off_switch_for_local_testing(monkeypatch):
+    monkeypatch.setattr(h, "_COUNTER", None)
+    monkeypatch.setenv("TMG_QUOTA", "off")
+    assert h._counter().try_consume("2026-11-01", "2026-11") is True
+
+
+def test_quota_on_by_default(monkeypatch):
+    monkeypatch.setattr(h, "_COUNTER", None)
+    monkeypatch.delenv("TMG_QUOTA", raising=False)
+    monkeypatch.setenv("TMG_TABLE", "tbl")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "ap-southeast-1")
+    assert isinstance(h._counter(), h.DynamoUsageCounter)

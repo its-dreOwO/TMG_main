@@ -74,10 +74,17 @@ class DynamoUsageCounter:
         return True
 
 
+class _Unlimited:
+    """Only for local container smoke tests (TMG_QUOTA=off); never set on the deployed function."""
+
+    def try_consume(self, day: str, month: str) -> bool:
+        return True
+
+
 def _counter() -> UsageCounter:
     global _COUNTER
     if _COUNTER is None:
-        _COUNTER = DynamoUsageCounter(os.environ["TMG_TABLE"])
+        _COUNTER = _Unlimited() if os.environ.get("TMG_QUOTA") == "off" else DynamoUsageCounter(os.environ["TMG_TABLE"])
     return _COUNTER
 
 

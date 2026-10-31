@@ -1,0 +1,6 @@
+*
+!lca/
+!deploy/lambda/
+!artifacts/models/xlmr/final/
+!artifacts/models/sts_thresholds.json
+**/__pycache__

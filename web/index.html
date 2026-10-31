@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nhận diện rủi ro hợp đồng · TMG</title>
+  <meta name="description" content="Tải lên hợp đồng PDF, nhận lại file với các điều khoản rủi ro được tô đỏ.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">TMG · Group 5 · Legal Clause Analyzer</p>
+      <h1>Nhận diện rủi ro hợp đồng</h1>
+      <p class="lead">Tải lên hợp đồng PDF. Hệ thống tô đỏ các câu có rủi ro về phạt vi phạm, bồi thường,
+        bảo mật, chấm dứt hợp đồng và hạn chế cạnh tranh, kèm ghi chú mức độ.</p>
+    </header>
+
+    <form id="form" novalidate>
+      <label class="drop" id="drop" for="file">
+        <input id="file" type="file" accept="application/pdf,.pdf">
+        <span class="drop-title" id="drop-title">Chọn file PDF</span>
+        <span class="drop-hint" id="drop-hint">hoặc kéo thả vào đây · tối đa 4 MB, 30 trang</span>
+      </label>
+
+      <div class="options">
+        <label>Loại hợp đồng
+          <select id="contract-type">
+            <option value="commercial">Thương mại</option>
+            <option value="labour">Lao động</option>
+            <option value="other">Khác</option>
+          </select>
+        </label>
+        <label>Tôi là
+          <select id="party">
+            <option value="">Không chọn</option>
+            <option value="Bên A">Bên A</option>
+            <option value="Bên B">Bên B</option>
+          </select>
+        </label>
+      </div>
+
+      <button type="submit" id="submit" class="primary" disabled>Phân tích</button>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </form>
+
+    <section class="result" id="result" hidden>
+      <p class="counts" id="counts"></p>
+      <div class="actions">
+        <button type="button" id="view" class="secondary">Xem PDF</button>
+        <a id="download" class="primary button" download>Tải xuống</a>
+      </div>
+      <button type="button" id="again" class="link">Phân tích file khác</button>
+    </section>
+
+    <footer>
+      <p><span class="mark">Câu tô đỏ</span> là câu có rủi ro; mở ghi chú trên vùng tô đỏ để xem loại rủi ro và mức độ.</p>
+      <p>File được xử lý trong bộ nhớ và không được lưu lại.</p>
+      <p>Kết quả chỉ mang tính hỗ trợ sàng lọc, không thay thế tư vấn pháp lý.</p>
+      <p><a href="https://github.com/its-dreOwO/TMG_main" rel="noopener">Mã nguồn</a></p>
+    </footer>
+  </main>
+</body>
+</html>

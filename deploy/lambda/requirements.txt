@@ -1,0 +1,23 @@
+# Pinned to the versions the models were trained and tested with locally.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.12.0+cpu
+transformers==4.57.6
+tokenizers==0.22.2
+huggingface-hub==0.36.2
+safetensors==0.8.0
+sentence-transformers==5.7.0
+sentencepiece==0.2.2
+protobuf==7.35.1
+spacy==3.8.18
+thinc==8.3.14
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+underthesea==9.5.0
+underthesea-core==3.3.2
+pymupdf==2.0
+python-docx==1.2.0
+scikit-learn==1.9.0
+scipy==1.17.1
+numpy==2.4.6
+pandas==3.0.3
+pyyaml==6.0.3
+joblib==1.5.3
