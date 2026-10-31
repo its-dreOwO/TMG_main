@@ -114,3 +114,35 @@ def write_pdf(source: Path, doc: Document, findings: list[Finding], out: Path) -
                 annot.set_info(content=note(f), title=AUTHOR)
                 annot.update()
         pdf.save(str(out))
+
+
+# ---------------------------------------------------------------- report
+REPORT_COLUMNS = ["Vị trí", "Câu trích xuất", "Loại rủi ro", "Thực thể", "Mức"]
+DISCLAIMER = "Lưu ý: kết quả chỉ mang tính hỗ trợ sàng lọc, không thay thế tư vấn pháp lý."
+NO_FINDINGS = "Không phát hiện điều khoản rủi ro nào."
+
+
+def sort_findings(findings: list[Finding]) -> list[Finding]:
+    return sorted(findings, key=lambda f: (-f.level, f.segment.seg_id))
+
+
+def report_rows(findings: list[Finding]) -> list[dict[str, str]]:
+    return [{
+        "Vị trí": f.segment.location,
+        "Câu trích xuất": f.segment.text,
+        "Loại rủi ro": f.label.vi,
+        "Thực thể": ", ".join(f"{e.text} ({e.kind})" for e in f.entities),
+        "Mức": f.level.vi,
+    } for f in sort_findings(findings)]
+
+
+def write_report(findings: list[Finding], out: Path) -> None:
+    """UTF-8 with BOM so Excel shows Vietnamese correctly."""
+    import csv
+
+    rows = report_rows(findings) or [dict.fromkeys(REPORT_COLUMNS, "") | {"Câu trích xuất": NO_FINDINGS}]
+    rows.append(dict.fromkeys(REPORT_COLUMNS, "") | {"Câu trích xuất": DISCLAIMER})
+    with open(out, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=REPORT_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
