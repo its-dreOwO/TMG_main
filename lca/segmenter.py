@@ -52,7 +52,8 @@ def _normalize_with_map(raw: str) -> tuple[str, list[int], list[int]]:
 
 
 def normalize(text: str) -> str:
-    return _normalize_with_map(text)[0]
+    """Same result as _normalize_with_map(text)[0], but fast enough for bulk data."""
+    return " ".join(unicodedata.normalize("NFC", text).split())
 
 
 def detect_lang(text: str) -> Literal["vi", "en"]:

@@ -1,7 +1,7 @@
-data/
-artifacts/
-reports/contracts/
+/data/
+/artifacts/
+/reports/contracts/
 __pycache__/
 .pytest_cache/
-.superpowers/
+/.superpowers/
 *.pyc
