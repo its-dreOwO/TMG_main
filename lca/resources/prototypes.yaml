@@ -1,0 +1,56 @@
+# Reference ("prototype") risk clauses for semantic similarity, half Vietnamese, half English.
+penalty:
+  - Bên vi phạm phải chịu phạt 8% giá trị phần nghĩa vụ bị vi phạm.
+  - Bên B phải trả tiền phạt bằng 12% giá trị hợp đồng nếu giao hàng chậm.
+  - Mỗi ngày chậm thanh toán, Bên mua phải trả thêm 0,5% giá trị đơn hàng.
+  - Nếu vi phạm cam kết, người lao động phải nộp một khoản tiền phạt tương đương ba tháng lương.
+  - Trường hợp giao hàng trễ hạn, Bên bán chịu mức phạt 1% giá trị lô hàng cho mỗi tuần chậm.
+  - The defaulting party shall pay a penalty equal to ten percent of the contract value.
+  - The Supplier shall pay liquidated damages of 0.5% of the order price for each day of delay.
+  - In the event of late delivery, Seller shall pay Buyer liquidated damages of $1,000 per day.
+  - Any breach of this clause shall result in a penalty of twenty percent of the fees paid.
+  - Contractor shall forfeit five percent of the price for every week the works are delayed.
+indemnity:
+  - Bên B chịu trách nhiệm bồi thường toàn bộ thiệt hại phát sinh, không giới hạn.
+  - Bên cung cấp phải bồi thường mọi tổn thất, chi phí và khiếu nại của bên thứ ba.
+  - Người lao động phải hoàn trả toàn bộ thiệt hại do mình gây ra cho công ty.
+  - Bên B phải bảo đảm Bên A không bị thiệt hại và gánh chịu mọi chi phí liên quan.
+  - Bên vi phạm phải đền bù toàn bộ tổn thất trực tiếp và gián tiếp cho bên bị vi phạm.
+  - Vendor shall indemnify, defend and hold harmless Client from any and all claims and losses.
+  - The Distributor shall be liable for all damages without any limitation of liability.
+  - Licensee shall reimburse Licensor for all losses, costs and attorneys' fees arising from any breach.
+  - The Company's liability under this Agreement shall be unlimited.
+  - Customer agrees to compensate Provider for all direct and indirect damages, including lost profits.
+confidentiality:
+  - Người lao động có nghĩa vụ bảo mật thông tin trong 02 năm sau khi nghỉ việc.
+  - Các bên không được tiết lộ thông tin mật cho bất kỳ bên thứ ba nào, vô thời hạn.
+  - Bên nhận thông tin phải giữ kín mọi tài liệu kinh doanh và kỹ thuật của Bên A.
+  - Nghĩa vụ giữ bí mật tiếp tục có hiệu lực sau khi hợp đồng chấm dứt.
+  - Bên B không được công bố hoặc sử dụng thông tin của Bên A vào mục đích khác.
+  - The Recipient shall hold all Confidential Information in strict confidence for five years.
+  - Employee shall not disclose any proprietary information of the Company, during or after employment.
+  - Each party shall keep the terms of this Agreement secret and not reveal them to third parties.
+  - The obligations of non-disclosure shall survive termination of this Agreement indefinitely.
+  - Recipient must return or destroy all confidential materials upon request.
+termination:
+  - Bên A có quyền đơn phương chấm dứt hợp đồng mà không cần báo trước.
+  - Công ty có thể chấm dứt hợp đồng bất cứ lúc nào mà không phải nêu lý do.
+  - Bên A được quyền hủy bỏ hợp đồng ngay lập tức và không phải bồi thường cho Bên B.
+  - Hợp đồng có thể bị chấm dứt bởi Bên A với thời hạn báo trước 03 ngày.
+  - Người sử dụng lao động được quyền cho thôi việc người lao động bất kỳ lúc nào.
+  - Either party may terminate this Agreement for convenience upon thirty days written notice.
+  - The Company may terminate this Agreement at any time, with or without cause.
+  - Buyer may cancel any purchase order at any time without liability to Seller.
+  - This Agreement may be terminated immediately by Licensor without prior notice.
+  - Client reserves the right to end this engagement at its sole discretion.
+non_compete:
+  - Người lao động không được làm việc cho đối thủ cạnh tranh trong vòng 12 tháng sau khi nghỉ việc.
+  - Bên B cam kết không kinh doanh sản phẩm cùng loại trong khu vực trong thời hạn hợp đồng.
+  - Trong 02 năm, Bên B không được lôi kéo nhân viên hoặc khách hàng của Bên A.
+  - Bên đại lý không được làm đại lý cho doanh nghiệp khác bán hàng hóa tương tự.
+  - Người lao động không được thành lập doanh nghiệp có cùng ngành nghề với công ty.
+  - Employee shall not engage in any business that competes with the Company for two years.
+  - During the term, Distributor shall not sell competing products in the Territory.
+  - Consultant shall not solicit or hire any employee of the Client for twelve months.
+  - The Seller agrees not to solicit customers of the Business after the closing.
+  - Licensee shall not develop or market any product similar to the Licensed Product.

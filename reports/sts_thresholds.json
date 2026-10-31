@@ -1,0 +1,7 @@
+{
+  "penalty": 0.45,
+  "indemnity": 0.4,
+  "confidentiality": 0.45,
+  "termination": 0.5,
+  "non_compete": 0.45
+}
