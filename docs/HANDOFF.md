@@ -1,6 +1,6 @@
 # Handoff: Legal Clause Analyzer (TMG, Group 5)
 
-Last updated: 2026-10-31. Read this first when resuming.
+Last updated: 2026-11-09. Read this first when resuming.
 
 ## Where things are
 
@@ -30,23 +30,45 @@ Last updated: 2026-10-31. Read this first when resuming.
   - the opus-mt vi→en translation loses legal meaning (route b);
   - transformers prints a spurious-looking "incorrect regex pattern / fix_mistral_regex" warning when loading the xlmr tokenizer (unverified).
 
-### 2. Website at kodingkat.xyz/TMG (spec `2026-10-31-tmg-web-design.md`, plan `2026-10-31-tmg-website.md`)
+### 2. Website at kodingkat.xyz/TMG: **live** (backend on Modal, not Lambda)
 
-The person approved the design ("ship it"). Choices already made:
-- AWS Lambda (container image, ap-southeast-1) rather than Modal or Daytona;
-- caps of 20 analyses a day and 100 a month;
-- a $1/month AWS Budget;
-- no local-run promise on the page;
-- page copy in Vietnamese;
-- PDFs only, max 4 MB / 30 pages.
+Spec `2026-10-31-tmg-web-design.md`, plan `2026-10-31-tmg-website.md`. The plan's Lambda backend
+was dropped on 2026-11-09: this AWS account (Free plan) caps Lambda memory at **512 MB**, and the
+app needs ~4–6 GB (XLM-R alone is 1.1 GB). The person chose Modal. All AWS resources made for it
+(ECR `tmg-lca`, DynamoDB `tmg-lca-usage`, IAM role `tmg-lca-lambda`, Budget `tmg-lca`) were deleted.
 
-| Task | State |
-|---|---|
-| 1. Lambda handler `lca/web/handler.py` | ✅ done, 20 tests (`tests/test_web_handler.py`), committed |
-| 2. Container image `deploy/lambda/` | ⚠️ **First build failed** at prefetch (`No module named 'lca'`). Fixed in the Dockerfile (`PYTHONPATH=${LAMBDA_TASK_ROOT}`) but **not rebuilt yet**. Next: `docker build --platform linux/amd64 -f deploy/lambda/Dockerfile -t tmg-lca .` then `PYTHON=/opt/study/.venv/bin/python deploy/lambda/smoke.sh` (runs with `--network none`, prints cold start, 1-page and 30-page timings, and checks 403 without the secret). Base is `public.ecr.aws/lambda/python:3.12` (AL2023; python 3.11's AL2 glibc is too old for torch 2.12 wheels). |
-| 3. AWS resources | ⏳ not started. Plan: ECR `tmg-lca`, DynamoDB `tmg-lca-usage` (pk string, on-demand), IAM role `tmg-lca-lambda` (may be denied for the `claude` IAM user; then ask the person to create it), Lambda `tmg-lca` 6144 MB / 90 s, Function URL auth NONE, env `TMG_SECRET` (keep in `~/.config/tmg/secret`, never in git) + `TMG_TABLE`, Budget `tmg-lca` $1 (alerts to drenguyen288@gmail.com at 50%/100%). Never set `TMG_QUOTA=off` on the deployed function (it exists for local smoke tests only). |
-| 4. Static page `web/` | 🟡 written (`index.html`, `style.css`, `app.js`, minimal, no gradients). The API flow is verified through `deploy/web/mock_server.py` (serves `/TMG/`, real handler with the regex detector). **Not yet checked in a real browser:** layout at 375 px and desktop, the pop-up tab/"Xem PDF" fallback, download. The headless Chromium download into the scratchpad was interrupted; just open `http://localhost:8765/TMG/` in a browser after `python deploy/web/mock_server.py 8765`. |
-| 5. VPS + Cloudflare + end-to-end | ⏳ not started. Add to the `kodingkat.xyz` block in `/etc/caddy/Caddyfile` **before** the SPA `try_files`: `redir /TMG /TMG/`, `handle_path /TMG/api/*` → `reverse_proxy https://<function-url-host>` with `header_up Host {upstream_hostport}` + `header_up x-tmg-secret <secret>`, `handle_path /TMG/*` → `root * /var/www/tmg` + `file_server`, and a `/TMG`-only CSP that allows `blob:` in `frame-src`/`object-src`. Back up the Caddyfile, run `caddy validate`, then reload. Add a Cloudflare rate-limit rule on `/TMG/api/analyze` if the token allows. Verify that kodingkat.xyz, a deep SPA route and shop.kodingkat.xyz still return 200. |
+How it fits together:
+- **Page:** `web/` served by Caddy on the VPS from `/var/www/tmg` at `https://kodingkat.xyz/TMG/`.
+- **API:** Caddy `handle_path /TMG/api/*` → `reverse_proxy https://its-dreowo--tmg-lca-web.us-east.modal.run`,
+  adding `x-tmg-secret`, `Modal-Key`, `Modal-Secret` from `/etc/caddy/tmg-secrets.caddy`
+  (`root:caddy 0640`, not in git). The main site moved into a `handle {}` block; backup of the old
+  Caddyfile is `/etc/caddy/Caddyfile.bak-20261109-042708`. Secrets are not in env vars because the
+  caddy unit runs with `--environ`, which logs them.
+- **Backend:** `deploy/modal/app.py` (Modal app `tmg-lca`):
+  - `web`: light WSGI front end (0.25 CPU), `requires_proxy_auth=True`, so direct hits get 401
+    before any container starts. Per-IP limiter (3 analyses + 6 warm-ups per 10 min, keyed IP
+    hashes in Modal Dict `tmg-lca-ratelimit`).
+  - Job flow, so Cloudflare's 100 s limit never applies: `POST /analyze` → 202 `{job}` (Modal
+    call id + HMAC); the page polls `GET /result?job=` every 2.5 s. `web/app.js` does the polling.
+  - `Analyzer`: runs `lca.web.handler` unchanged on Lambda-style events (4 CPU, 6 GB limit,
+    scale to zero after 60 s). 1 page ≈ 13 s cold, 30 pages ≈ 45–90 s end to end.
+  - `consume`: the 20/day + 100/month caps in `counts.json` on Volume `tmg-lca-usage`
+    (single container, so atomic).
+- **Image:** built without Docker by `deploy/lambda/modal_build.py` (`--step build|smoke|push`):
+  pip into `/var/task` inside `public.ecr.aws/lambda/python:3.12`, layer tarball on Volume
+  `tmg-lca-build`, baked into the Modal image. `--step smoke` runs the handler with the network
+  blocked. The XLM-R weights come from `/xlmr-final` on `tmg-lca-build`, uploaded from the local
+  copy (sha256 prefix `049a181eefb110e3`). **Do not use `legal-clause-models:/xlmr/final`**: two
+  reads of it gave two different hashes, so the copy on that volume isn't trustworthy.
+  `--step push` (ECR) is unused now. `Dockerfile`/`smoke.sh` are kept for reference.
+- **Redeploy after code changes:** `modal run deploy/lambda/modal_build.py --step build`, then
+  `--step smoke`, then `modal deploy deploy/modal/app.py`. Page: copy `web/*` to `/var/www/tmg/`.
+- **Secrets:** `~/.config/tmg/secret` (also Modal secret `tmg-lca`), `~/.config/tmg/modal-proxy.json`
+  (Modal proxy token `tmg-lca-caddy`).
+- **Not done:**
+  - Cloudflare rate-limit rule: the token lacks the rulesets permission.
+  - A Modal spending limit: no CLI setting; check the dashboard.
+  - A real-browser test of the polling page (the person is testing it).
 
 ## Environment facts the next session needs
 
@@ -54,15 +76,15 @@ The person approved the design ("ship it"). Choices already made:
   - Volumes: `legal-clause-data` (raw + processed data, downloaded by Modal from Kaggle) and `legal-clause-models` (trained runs).
   - Secret `kaggle`.
   - Training GPU: `RTX-PRO-6000` (bf16, batch 64, ~7 min of training per model).
-- **AWS** CLI user `claude`, Free plan; never upgrade to Paid. Account Lambda concurrency limit is 5. VPS `ssh -i ~/.ssh/aws-vps.pem admin@13.251.153.23` (t4g.small, Caddy, also serves `shop.kodingkat.xyz`).
+- **AWS** CLI user `claude`, Free plan; never upgrade to Paid. Lambda memory is capped at 512 MB and concurrency at 5, which is why TMG runs on Modal. VPS `ssh -i ~/.ssh/aws-vps.pem admin@13.251.153.23` (t4g.small, Caddy, also serves `shop.kodingkat.xyz`).
 - **Cloudflare** token in `~/.config/cloudflare/token` (strip a possible BOM).
 - **Kaggle** token in `~/.kaggle/access_token`.
-- **Docker** 29 works locally; about 15 GB of disk was free on 2026-10-31.
+- **Docker** 29 works locally, but only about 7 GB of disk was free on 2026-11-09; image builds run on Modal instead.
+- **Local DNS** fails intermittently (`Could not resolve host`); retry before suspecting the server. Cloudflare's bot check rejects Python-urllib's default user agent (error 1010).
 - **Commit trailers:** `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` plus the current session's `Claude-Session:` line.
 
 ## Suggested order next session
 
-1. Rebuild the image, run `smoke.sh`, record cold-start and 30-page timings (they must stay under Cloudflare's 100 s).
-2. Website Task 3 (AWS), then Task 5 (Caddy/Cloudflare), then an end-to-end test from a real browser.
-3. Final whole-branch review of both plans (none has run yet).
-4. When the team supplies the contracts: pipeline Task 13 (labels → Kappa → `compare` → `reports/results.md`), then fix the heading and STS false alarms.
+1. Confirm the person's browser test of kodingkat.xyz/TMG (new tab with the PDF, counts, download, 375 px layout).
+2. Final whole-branch review of both plans (none has run yet).
+3. When the team supplies the contracts: pipeline Task 13 (labels → Kappa → `compare` → `reports/results.md`), then fix the heading and STS false alarms.

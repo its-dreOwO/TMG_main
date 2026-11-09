@@ -14,10 +14,12 @@ LINES = ["Điều 8. Phạt vi phạm",
 
 def make(pages: int, out: Path) -> None:
     doc = pymupdf.open()
-    for _ in range(pages):
+    for p in range(pages):
         page = doc.new_page()
         page.insert_font(fontname="noto", fontfile=FONT)
-        page.insert_textbox(pymupdf.Rect(60, 60, 540, 780), "\n".join(LINES * 6), fontsize=10, fontname="noto")
+        # Number every line: identical pages would all be stripped as repeated headers/footers.
+        lines = [f"{p * 30 + i + 1}. {line}" for i, line in enumerate(LINES * 6)]
+        page.insert_textbox(pymupdf.Rect(60, 60, 540, 780), "\n".join(lines), fontsize=10, fontname="noto")
     doc.save(out)
 
 

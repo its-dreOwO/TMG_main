@@ -4,8 +4,10 @@ Lambda handler with the regex detector only (no large models, no AWS).
   python deploy/web/mock_server.py 8765   →  http://localhost:8765/TMG/
 """
 import base64
+import json
 import os
 import sys
+import uuid
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qsl, urlsplit
@@ -20,6 +22,7 @@ from lca.web import handler as h  # noqa: E402
 
 h._DETECTORS = [RegexDetector()]
 WEB = ROOT / "web"
+JOBS: dict[str, dict] = {}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -34,7 +37,14 @@ class Handler(SimpleHTTPRequestHandler):
                  "queryStringParameters": dict(parse_qsl(url.query)),
                  "body": base64.b64encode(body).decode(), "isBase64Encoded": True,
                  "requestContext": {"http": {"method": method}, "requestId": "local"}}
-        res = h.handler(event, None)
+        if url.path.endswith("/result"):  # mimic deploy/modal/app.py: start a job, then poll
+            res = JOBS.pop(dict(parse_qsl(url.query)).get("job", ""), None) or h._error(404, "Không tìm thấy kết quả.")
+        elif url.path.endswith("/analyze"):
+            job = uuid.uuid4().hex
+            JOBS[job] = h.handler(event, None)
+            res = {"statusCode": 202, "headers": {"content-type": "application/json"}, "body": json.dumps({"job": job})}
+        else:
+            res = h.handler(event, None)
         out = res["body"].encode()
         self.send_response(res["statusCode"])
         for k, v in res["headers"].items():
@@ -46,7 +56,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/TMG/api/"):
             return self._lambda("GET")
-        if self.path == "/TMG":
+        if self.path in ("/", "/TMG"):
             self.send_response(308)
             self.send_header("location", "/TMG/")
             return self.end_headers()
