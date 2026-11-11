@@ -1,6 +1,6 @@
 import pytest
 
-from lca.detectors.regex_rules import RegexDetector
+from lca.detectors.regex_rules import RegexDetector, is_definition
 from lca.types import RiskLabel
 
 
@@ -53,3 +53,32 @@ def test_method_name():
 def test_never_returns_none_label():
     out = RegexDetector().predict(["bồi thường toàn bộ, bảo mật 2 năm, tiền phạt"])[0]
     assert RiskLabel.NONE not in {d.label for d in out} and len(out) == 3
+
+
+@pytest.mark.parametrize("text", [
+    "“Fees” has the meaning set forth in Section 5.1.",
+    "1.14 “Program Data” means the data set forth on Exhibit A in the possession of University.",
+    "DEFINITIONS 1.1 “Affiliates” of a person or entity means any other entity which controls it.",
+    "1.15 “Project” shall mean the compilation of the Program Data.",
+    "The term “control” means the possession of the power to direct the management of a person.",
+    '"Confidential Information" means any non-public information',
+    "Commencement Date: means the date of this agreement.",
+    "Inactive Territories means a country in which the Distributor has not sold the Product.",
+    "Initial Term has the meaning given to it in clause 12.1.",
+    "1.2. “Thông tin mật” là mọi thông tin do Bên A cung cấp cho Bên B.",
+    "“Sự kiện bất khả kháng” có nghĩa là sự kiện xảy ra một cách khách quan.",
+])
+def test_definition_sentences_recognised(text):
+    assert is_definition(text)
+
+
+@pytest.mark.parametrize("text", [
+    "Mức phạt là 12% giá trị hợp đồng.",
+    "Bên B là bên chịu phạt 12% giá trị hợp đồng nếu giao hàng chậm.",
+    "This means the Supplier shall pay a penalty of 12% of the contract value.",
+    "Consultation by either Party shall be by means of personal visits and telephone calls.",
+    "Each Party shall keep the “Confidential Information” secret, which means no disclosure for 5 years.",
+    "The Receiving Party shall maintain in confidence all Confidential Information for seven (7) years.",
+])
+def test_obligations_are_not_definitions(text):
+    assert not is_definition(text)

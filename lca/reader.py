@@ -15,6 +15,8 @@ from lca.types import Block, Document
 MIN_CHARS_PER_PAGE = 20
 HEADER_PAGE_RATIO = 0.6
 HEADER_MIN_PAGES = 3
+ZIP_MAGIC = b"PK\x03\x04"  # .docx is a zip archive
+PDF_HEADER_WINDOW = 1024  # readers accept "%PDF-" anywhere in the first 1024 bytes
 
 
 class UnreadableDocumentError(Exception):
@@ -45,12 +47,22 @@ def read_document(path: Path) -> Document:
     if not path.is_file():
         raise UnreadableDocumentError(f"Không tìm thấy tệp: {path.name}")
     suffix = path.suffix.lower()
-    if suffix == ".docx":
-        return _read_docx(path)
-    if suffix == ".pdf":
-        return _read_pdf(path)
-    raise UnreadableDocumentError(
-        f"Định dạng '{suffix or path.name}' không được hỗ trợ. Chỉ nhận .docx hoặc .pdf.")
+    if suffix not in (".docx", ".pdf"):
+        raise UnreadableDocumentError(
+            f"Định dạng '{suffix or path.name}' không được hỗ trợ. Chỉ nhận .docx hoặc .pdf.")
+    kind = _sniff_kind(path) or suffix[1:]
+    return _read_docx(path) if kind == "docx" else _read_pdf(path)
+
+
+def _sniff_kind(path: Path) -> str | None:
+    """The type the content says it is; a Word file saved as .pdf must not be treated as a PDF."""
+    with path.open("rb") as f:
+        head = f.read(PDF_HEADER_WINDOW)
+    if head.startswith(ZIP_MAGIC):
+        return "docx"
+    if b"%PDF-" in head:
+        return "pdf"
+    return None
 
 
 def _read_docx(path: Path) -> Document:

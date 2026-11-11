@@ -5,6 +5,7 @@ import math
 import re
 from collections import defaultdict
 
+from lca.detectors.regex_rules import CONTEXT_SCORE, RegexDetector
 from lca.ner import obligor
 from lca.types import AnalysisContext, Detection, Entity, Finding, Level, RiskLabel, Segment
 
@@ -26,30 +27,40 @@ def score(segment: Segment, detections: list[Detection], entities: list[Entity],
     percents = [e.value for e in entities if e.kind == "PERCENT" and e.value is not None]
     durations = [e.value for e in entities if e.kind == "DURATION" and e.value is not None]
     text = segment.text
-    if label is RiskLabel.PENALTY:
-        if ctx.contract_type == "commercial" and any(p > COMMERCIAL_PENALTY_CAP for p in percents):
-            level = Level.HIGH
-        elif percents:
-            level = max(level, Level.MEDIUM)
+    # A penalty can sit inside a sentence whose main label is something else
+    # ("bồi thường ... và chịu phạt 10%"). Only the regex context pattern counts there: it needs
+    # a penalty word next to the amount, so "thanh toán 30% giá trị hợp đồng" stays out.
+    has_penalty = label is RiskLabel.PENALTY or any(
+        d.label is RiskLabel.PENALTY and d.method == RegexDetector.name and d.score >= CONTEXT_SCORE
+        for d in detections)
+    over_cap = (has_penalty and ctx.contract_type == "commercial"
+                and any(p > COMMERCIAL_PENALTY_CAP for p in percents))
+    if label is RiskLabel.PENALTY and percents:
+        level = max(level, Level.MEDIUM)
     elif label is RiskLabel.INDEMNITY and UNCAPPED_RE.search(text):
         level = Level.HIGH
     elif label is RiskLabel.CONFIDENTIALITY and durations:
         level = Level.HIGH if any(math.isinf(d) for d in durations) else max(level, Level.MEDIUM)
+    if over_cap:
+        level = Level.HIGH
 
     bound = obligor(text, entities)
     if ctx.my_party and bound and bound.casefold() != ctx.my_party.casefold():
         level = Level(max(Level.LOW, level - 1))
 
     return Finding(segment, label, list(detections), list(entities), level,
-                   _reason(label, entities, bound, methods))
+                   _reason(label, entities, bound, methods, over_cap))
 
 
-def _reason(label: RiskLabel, entities: list[Entity], bound: str | None, methods: list[str]) -> str:
+def _reason(label: RiskLabel, entities: list[Entity], bound: str | None, methods: list[str],
+            over_cap: bool = False) -> str:
     parts = [label.vi]
     for kind, prefix in (("PERCENT", "mức"), ("MONEY", "số tiền"), ("DURATION", "thời hạn")):
         values = [e.text for e in entities if e.kind == kind]
         if values:
             parts.append(f"{prefix} {', '.join(values)}")
+    if over_cap:
+        parts.append(f"vượt trần phạt {COMMERCIAL_PENALTY_CAP:g}% (Điều 301 Luật Thương mại 2005)")
     if bound:
         parts.append(f"{bound} chịu nghĩa vụ")
     return "; ".join(parts) + f" (phát hiện bởi: {', '.join(methods)})."
