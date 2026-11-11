@@ -96,7 +96,7 @@ class ModalCounter:
 # A full 4-CPU reservation: with 0.25 CPU reserved the container did not get to burst and a
 # 30-page contract took 139 s. Memory is not throttled, so its low reservation keeps idle cost down.
 @app.cls(image=web_image, secrets=[modal.Secret.from_name("tmg-lca")], cpu=4.0, memory=(1024, 6144),
-         timeout=300, max_containers=2, scaledown_window=60)
+         timeout=600, max_containers=2, scaledown_window=60)
 class Analyzer:
     """Runs the Lambda handler unchanged; models load once per container."""
 
@@ -114,7 +114,7 @@ class Analyzer:
         return self.handler.handler(event, None)
 
 
-MAX_BYTES = 4 * 1024 * 1024  # same as lca.web.handler.MAX_BYTES; checked here before reading
+MAX_BYTES = 20 * 1024 * 1024  # same as lca.web.handler.MAX_BYTES; checked here before reading
 RATE_WINDOW_S = 600
 RATE_LIMITS = {"analyze": 3, "warm": 6}  # per visitor IP per 10 minutes
 JOB = re.compile(r"^(fc-[A-Za-z0-9]{10,40})\.([0-9a-f]{32})$")
@@ -147,7 +147,7 @@ def _sign(call_id: str, secret: str) -> str:
 # Requests return within a second or two whatever the contract length, so Cloudflare's 100 s
 # limit never applies: POST /analyze starts a background job and answers 202 with a signed job id,
 # then the page polls GET /result?job=... until the job's response is ready.
-@app.function(image=counter_image, secrets=[modal.Secret.from_name("tmg-lca")], cpu=0.25, memory=256,
+@app.function(image=counter_image, secrets=[modal.Secret.from_name("tmg-lca")], cpu=0.25, memory=512,
               timeout=60, max_containers=2, scaledown_window=120)
 # Modal refuses requests without the proxy-token headers before starting any container, so
 # only Caddy (which holds the token) can wake this up.
@@ -177,7 +177,7 @@ def web():
         if path.endswith("/analyze") and method == "POST":
             length = int(environ.get("CONTENT_LENGTH") or 0)
             if length > MAX_BYTES:
-                return _json(413, {"error": "File quá lớn. Giới hạn là 4 MB."})
+                return _json(413, {"error": "File quá lớn. Giới hạn là 20 MB."})
             if not _allow("analyze", ip, secret):
                 return _json(429, {"error": "Bạn gửi quá nhiều yêu cầu. Vui lòng đợi vài phút rồi thử lại."})
             body = environ["wsgi.input"].read(length) if length else b""

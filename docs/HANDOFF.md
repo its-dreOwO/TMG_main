@@ -52,6 +52,9 @@ How it fits together:
     call id + HMAC); the page polls `GET /result?job=` every 2.5 s. `web/app.js` does the polling.
   - `Analyzer`: runs `lca.web.handler` unchanged on Lambda-style events (4 CPU, 6 GB limit,
     scale to zero after 60 s). 1 page ≈ 13 s cold, 30 pages ≈ 45–90 s end to end.
+  - Upload limits (raised 2026-11-11): 20 MB and 60 pages, `Analyzer` timeout 600 s. They are set in
+    `lca/web/handler.py`, `deploy/modal/app.py`, `web/app.js`, `web/index.html`, and Caddy's
+    `request_body max_size 21MB` on the API route. 60 pages ≈ 80 s warm; 45 pages ≈ 125 s cold.
   - `consume`: the 20/day + 100/month caps in `counts.json` on Volume `tmg-lca-usage`
     (single container, so atomic).
 - **Image:** built without Docker by `deploy/lambda/modal_build.py` (`--step build|smoke|push`):
@@ -62,7 +65,9 @@ How it fits together:
   reads of it gave two different hashes, so the copy on that volume isn't trustworthy.
   `--step push` (ECR) is unused now. `Dockerfile`/`smoke.sh` are kept for reference.
 - **Redeploy after code changes:** `modal run deploy/lambda/modal_build.py --step build`, then
-  `--step smoke`, then `modal deploy deploy/modal/app.py`. Page: copy `web/*` to `/var/www/tmg/`.
+  `/opt/study/.venv/bin/python -m modal run deploy/lambda/modal_build.py --step smoke` (the pipx `modal`
+  has no `pymupdf`), then `MODAL_FORCE_BUILD=1 modal deploy deploy/modal/app.py` (without the force
+  flag the cached image with the old layer is reused). Page: copy `web/*` to `/var/www/tmg/`.
 - **Secrets:** `~/.config/tmg/secret` (also Modal secret `tmg-lca`), `~/.config/tmg/modal-proxy.json`
   (Modal proxy token `tmg-lca-caddy`).
 - **Not done:**

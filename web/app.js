@@ -1,9 +1,9 @@
 "use strict";
 
-const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024;
 const COLD_START_HINT_MS = 6000;
 const POLL_MS = 2500;
-const POLL_GIVE_UP_MS = 6 * 60 * 1000;
+const POLL_GIVE_UP_MS = 11 * 60 * 1000;
 const MAX_POLL_FAILURES = 5;
 const RETRY_STATUSES = [502, 503, 504, 520, 521, 522, 523, 524];
 
@@ -30,7 +30,7 @@ function pick(f) {
   if (!f) return;
   const isPdf = f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
   if (!isPdf) return setStatus("Vui lòng chọn một file PDF.", true);
-  if (f.size > MAX_BYTES) return setStatus("File quá lớn. Giới hạn là 4 MB.", true);
+  if (f.size > MAX_BYTES) return setStatus("File quá lớn. Giới hạn là 20 MB.", true);
   file = f;
   $("drop-title").textContent = f.name;
   $("drop-hint").textContent = `${(f.size / 1024 / 1024).toFixed(2)} MB · bấm để chọn file khác`;
@@ -168,6 +168,6 @@ again.addEventListener("click", () => {
   file = null;
   submit.disabled = true;
   $("drop-title").textContent = "Chọn file PDF";
-  $("drop-hint").textContent = "hoặc kéo thả vào đây · tối đa 4 MB, 30 trang";
+  $("drop-hint").textContent = "hoặc kéo thả vào đây · tối đa 20 MB, 60 trang";
   setStatus("");
 });
