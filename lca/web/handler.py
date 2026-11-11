@@ -23,8 +23,8 @@ from lca.reader import UnreadableDocumentError
 from lca.types import AnalysisContext, Level
 from lca.writers import write_pdf
 
-MAX_BYTES = 4 * 1024 * 1024
-MAX_PAGES = 30
+MAX_BYTES = 20 * 1024 * 1024
+MAX_PAGES = 60
 DAY_LIMIT = 20
 MONTH_LIMIT = 100
 CONTRACT_TYPES = {"commercial", "labour", "other"}
@@ -140,7 +140,7 @@ def _analyze(event: dict) -> dict:
 
     data = _body(event)
     if len(data) > MAX_BYTES:
-        return _error(413, "File quá lớn. Giới hạn là 4 MB.")
+        return _error(413, "File quá lớn. Giới hạn là 20 MB.")
     if not data.startswith(b"%PDF-"):
         return _error(400, "Vui lòng chọn một file PDF.")
     try:

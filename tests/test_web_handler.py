@@ -78,13 +78,13 @@ def test_rejects_empty_body():
 
 
 def test_rejects_over_4mb():
-    status, body = call(event(body=b"%PDF-1.7\n" + b"0" * (4 * 1024 * 1024)))
-    assert status == 413 and "4 MB" in body["error"]
+    status, body = call(event(body=b"%PDF-1.7\n" + b"0" * (20 * 1024 * 1024)))
+    assert status == 413 and "20 MB" in body["error"]
 
 
-def test_rejects_over_30_pages():
-    status, body = call(event(body=pdf_bytes(pages=31)))
-    assert status == 413 and "30" in body["error"]
+def test_rejects_over_60_pages():
+    status, body = call(event(body=pdf_bytes(pages=61)))
+    assert status == 413 and "60" in body["error"]
 
 
 def test_scanned_pdf_returns_422_message():

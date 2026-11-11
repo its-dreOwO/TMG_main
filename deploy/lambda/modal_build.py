@@ -197,7 +197,7 @@ def main(step: str = "all", tag: str = ""):
 
         with tempfile.TemporaryDirectory() as tmp:
             make(1, Path(tmp) / "1.pdf")
-            make(30, Path(tmp) / "30.pdf")
+            make(60, Path(tmp) / "30.pdf")  # the page limit (MAX_PAGES)
             print(smoke.remote((Path(tmp) / "1.pdf").read_bytes(), (Path(tmp) / "30.pdf").read_bytes()))
     if step in ("all", "push"):
         print(push.remote(tag))
