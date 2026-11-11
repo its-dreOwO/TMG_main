@@ -90,3 +90,18 @@ def test_unsupported_extension_raises(tmp_path):
 def test_missing_file_raises(tmp_path):
     with pytest.raises(UnreadableDocumentError):
         read_document(tmp_path / "nope.docx")
+
+
+def test_word_file_named_pdf_is_read_as_docx(tmp_path):
+    d = docx.Document()
+    d.add_paragraph("Điều 1. Hiệu lực")
+    path = tmp_path / "mau.pdf"
+    d.save(path)
+    doc = read_document(path)
+    assert doc.kind == "docx" and [b.text for b in doc.blocks] == ["Điều 1. Hiệu lực"]
+
+
+def test_pdf_file_named_docx_is_read_as_pdf(tmp_path):
+    path = _pdf(tmp_path / "a.docx", [["Article 1 The Vendor shall deliver the goods on time."]])
+    doc = read_document(path)
+    assert doc.kind == "pdf" and "Vendor shall deliver" in doc.blocks[0].text

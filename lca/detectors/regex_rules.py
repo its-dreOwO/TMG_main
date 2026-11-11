@@ -89,3 +89,22 @@ class RegexDetector:
                 if not any(neg in window for neg in NEGATIONS):
                     return score
         return 0.0
+
+
+# Definition sentences ("“Fees” has the meaning ...") name a term and bind nobody, so the pipeline
+# drops them for every detector. Stricter than DEFINITION_RE above: the term must be quoted or
+# Title Case, so an obligation such as "Mức phạt là 12% giá trị hợp đồng" is never mistaken for one.
+_NUMBERING = r"^\W*(?:[A-Z]{3,}\s+){0,3}(?:\d+(?:\.\d+)*[.)]?\s+)?"
+_MEANS = r"(?:means|shall\s+mean|(?:has|shall\s+have)\s+the\s+meaning)\b"
+QUOTED_DEFINITION_RE = re.compile(
+    _NUMBERING + r"(?:the\s+terms?\s+)?[“\"][^“”\"]{1,80}[”\"](?:\s+[\w-]+){0,6}?\s*[:,]?\s+"
+    r"(?:" + _MEANS + r"|là\b|có\s+nghĩa\s+là\b|được\s+hiểu\s+là\b)", _F)
+_TERM_WORD = r"[A-Z][\w’'&-]*"
+TITLE_CASE_DEFINITION_RE = re.compile(  # case-sensitive: "Initial Term has the meaning ..."
+    _NUMBERING + r"(?!(?:This|That|It|These|Those|Which|Such)\b)"
+    + _TERM_WORD + r"(?:\s+(?:" + _TERM_WORD + r"|of|and|the|for)){0,6}\s*:?\s+" + _MEANS, re.UNICODE)
+
+
+def is_definition(text: str) -> bool:
+    text = unicodedata.normalize("NFC", text)
+    return bool(QUOTED_DEFINITION_RE.match(text) or TITLE_CASE_DEFINITION_RE.match(text))

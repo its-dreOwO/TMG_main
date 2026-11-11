@@ -132,3 +132,30 @@ def test_app_shows_disclaimer_before_any_upload():
     at = AppTest.from_file("app.py").run(timeout=30)
     assert not at.exception
     assert any("không thay thế tư vấn pháp lý" in w.value for w in at.warning)
+
+
+def test_word_file_named_pdf_exports_highlighted_docx(tmp_path):
+    src = _docx(tmp_path / "mau.pdf", ["8.2. Bên B phải chịu phạt 12% giá trị hợp đồng nếu giao hàng chậm."])
+    res = analyze(src, AnalysisContext(), [RegexDetector()])
+    paths = export(res, tmp_path / "out")
+    assert paths["document"].suffix == ".docx"
+    marked = docx.Document(str(paths["document"]))
+    assert any(r.font.highlight_color for p in marked.paragraphs for r in p.runs)
+
+
+def test_definition_sentence_is_not_reported_by_any_detector(tmp_path):
+    from lca.types import Detection, RiskLabel
+
+    class FlagsEverything:  # stands in for an STS false alarm
+        name = "sts"
+
+        def predict(self, texts):
+            return [[Detection("sts", RiskLabel.CONFIDENTIALITY, 0.5)] for _ in texts]
+
+    src = _docx(tmp_path / "d.docx", [
+        "1.14 “Program Data” means the data set forth on Exhibit A in the possession of University.",
+        "The Receiving Party shall maintain in confidence all Confidential Information.",
+    ])
+    res = analyze(src, AnalysisContext(), [FlagsEverything()])
+    assert [f.segment.text for f in res.findings] == [
+        "The Receiving Party shall maintain in confidence all Confidential Information."]

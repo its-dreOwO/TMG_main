@@ -80,3 +80,22 @@ def test_lowering_never_below_low():
 def test_reason_names_entities():
     f = run("Bên B phải chịu phạt 12% giá trị hợp đồng", RiskLabel.PENALTY)
     assert "12%" in f.reason and "Bên B" in f.reason and "Phạt vi phạm" in f.reason
+
+
+def test_over_cap_penalty_inside_indemnity_sentence_is_high():
+    text = "Bên vi phạm phải bồi thường thiệt hại và chịu phạt vi phạm bằng 10% giá trị hợp đồng."
+    dets = [Detection("regex", RiskLabel.PENALTY, 1.0), Detection("regex", RiskLabel.INDEMNITY, 0.6),
+            Detection("sts", RiskLabel.INDEMNITY, 0.8)]
+    f = score(seg(text), dets, extract_entities(text, "vi"), AnalysisContext())
+    assert f.label == RiskLabel.INDEMNITY and f.level == Level.HIGH
+    assert "phạt" in f.reason.lower() and "8%" in f.reason
+
+
+@pytest.mark.parametrize("stray", [Detection("regex", RiskLabel.PENALTY, 0.6),   # keyword "% giá trị hợp đồng"
+                                   Detection("sts", RiskLabel.PENALTY, 0.7)])    # STS false alarm
+def test_payment_share_is_not_an_over_cap_penalty(stray):
+    text = "Bên A thanh toán 30% giá trị hợp đồng và bồi thường thiệt hại nếu chậm trả."
+    dets = [stray, Detection("xlmr", RiskLabel.INDEMNITY, 0.9)]
+    f = score(seg(text), dets, extract_entities(text, "vi"), AnalysisContext())
+    assert f.label == RiskLabel.INDEMNITY and f.level == Level.MEDIUM
+    assert "8%" not in f.reason

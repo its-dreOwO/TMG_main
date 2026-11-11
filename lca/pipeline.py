@@ -15,6 +15,7 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 from lca.detectors.base import Detector  # noqa: E402
+from lca.detectors.regex_rules import is_definition  # noqa: E402
 from lca.ner import extract_entities  # noqa: E402
 from lca.reader import UnreadableDocumentError, read_document  # noqa: E402
 from lca.scoring import score  # noqa: E402
@@ -74,7 +75,7 @@ def analyze(path: Path, ctx: AnalysisContext, detectors: list[Detector],
             merged[i].extend(found)
     findings = []
     for seg, dets in zip(segments, merged):
-        if dets:
+        if dets and not is_definition(seg.text):
             finding = score(seg, dets, extract_entities(seg.text, seg.lang), ctx)
             if finding:
                 findings.append(finding)
@@ -85,7 +86,7 @@ def export(result: AnalysisResult, out_dir: Path) -> dict[str, Path]:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     src = result.document.path
-    doc_out = out_dir / f"{src.stem}_danh_dau{src.suffix}"
+    doc_out = out_dir / f"{src.stem}_danh_dau.{result.document.kind}"
     if result.document.kind == "docx":
         write_docx(src, result.findings, doc_out)
     else:
