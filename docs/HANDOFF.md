@@ -1,6 +1,6 @@
 # Handoff: Legal Clause Analyzer (TMG, Group 5)
 
-Last updated: 2026-11-11. Read this first when resuming.
+Last updated: 2026-11-12. Read this first when resuming.
 
 ## Where things are
 
@@ -20,7 +20,7 @@ Last updated: 2026-11-11. Read this first when resuming.
 ### 1. Pipeline (plan `2026-10-31-legal-clause-analyzer.md`): Tasks 1–12 done, Task 13 partly done
 
 - **Working:** read docx/pdf → segment → regex + TF-IDF + Legal-BERT/XLM-R + STS → entities → Cao/Trung bình/Thấp → highlighted docx/pdf + CSV; CLI `python -m lca.cli`; Streamlit `app.py`.
-- **Tests:** 224 passing (`/opt/study/.venv/bin/python -m pytest -q`).
+- **Tests:** 229 passing (`/opt/study/.venv/bin/python -m pytest -q`).
 - **Fixed 2026-11-11** after running six real documents (3 English PDFs, 3 Vietnamese Word files):
   - the reader goes by file content, so a Word file saved as `.pdf` (or the reverse) is read
     correctly and the highlighted output takes the real type's extension;
@@ -28,6 +28,10 @@ Last updated: 2026-11-11. Read this first when resuming.
     whose main label is another group ("bồi thường ... và chịu phạt 10%"); the note says so;
   - definition sentences ("“Fees” has the meaning ...", "“X” là ...") are dropped for every
     detector (`is_definition` in `lca/detectors/regex_rules.py`, applied in `lca/pipeline.py`).
+- **Fixed 2026-11-12** after cross-checking the written report (`TMG.pdf`) against the code:
+  - the CSV report has a sixth column, `Giải thích`, holding the same explanation as the note;
+  - a negation counts when it *ends* within 15 characters before the match, so
+    "not be subject to any penalty" and "không phải chịu tiền phạt" are no longer flagged.
 - **Test-set macro F1 over the risk groups:** TF-IDF+SVM 0.898 (best), Legal-BERT 0.891, XLM-R 0.882. The Transformers win 4 of 5 groups but are weak on penalty (only 314 training rows).
 - **Task 13 is blocked on the team:** 2 real contracts in `data/contracts/` plus at least 2 independent labelings, using `python -m lca.eval.annotate template|consensus`, then `python -m lca.eval.compare`. The evaluation code is done and tested.
 - **Final whole-branch code review:** not done yet.

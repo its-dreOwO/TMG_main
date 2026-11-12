@@ -52,6 +52,8 @@ KEYWORDS: dict[RiskLabel, list[str]] = {
 }
 
 NEGATIONS = ["không bị", "miễn", "không phải chịu", "not be subject to"]
+NEGATION_RE = re.compile("|".join(re.escape(n) for n in NEGATIONS), _F)
+_MAX_NEGATION = max(len(n) for n in NEGATIONS)
 DEFINITION_RE = re.compile(
     r"^\W*[\"“']?(\w+\s){0,5}\w+[\"”']?\s+(là|có nghĩa là|means|shall mean)\b", _F)
 
@@ -85,10 +87,20 @@ class RegexDetector:
     def _best(text: str, patterns: list[re.Pattern], score: float) -> float:
         for pat in patterns:
             for m in pat.finditer(text):
-                window = text[max(0, m.start() - NEGATION_WINDOW): m.end()].lower()
-                if not any(neg in window for neg in NEGATIONS):
+                if not RegexDetector._negated(text, m):
                     return score
         return 0.0
+
+    @staticmethod
+    def _negated(text: str, m: re.Match) -> bool:
+        """A negation that ends at most NEGATION_WINDOW characters before the match, or runs into it.
+
+        Measured from the negation's end, so a phrase longer than the window ("not be subject to")
+        still counts.
+        """
+        earliest_end = m.start() - NEGATION_WINDOW
+        start = max(0, earliest_end - _MAX_NEGATION)
+        return any(n.end() >= earliest_end for n in NEGATION_RE.finditer(text, start, m.end()))
 
 
 # Definition sentences ("“Fees” has the meaning ...") name a term and bind nobody, so the pipeline

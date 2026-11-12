@@ -36,6 +36,20 @@ def test_negated_definition_and_plain_text_not_flagged(text):
     assert RegexDetector().predict([text]) == [[]]
 
 
+@pytest.mark.parametrize("text", [
+    "The Supplier shall not be subject to any penalty for late delivery",
+    "Seller shall not be subject to liquidated damages",
+    "Bên B không phải chịu tiền phạt nào",
+])
+def test_negation_longer_than_the_window_still_suppresses(text):
+    assert RegexDetector().predict([text]) == [[]]
+
+
+def test_negation_far_before_the_cue_does_not_suppress():
+    text = "Bên A được miễn thuế theo quy định của pháp luật; Bên B chịu phạt 10% giá trị hợp đồng"
+    assert scores(text).get(RiskLabel.PENALTY) == 1.0
+
+
 def test_one_output_per_input():
     assert len(RegexDetector().predict(["a", "b"])) == 2
 

@@ -121,7 +121,7 @@ we will fix (see Next steps).
 
 ### Quality
 
-- **180 automated tests**, all passing. They cover file reading, segmentation, every detector, entities,
+- **229 automated tests**, all passing. They cover file reading, segmentation, every detector, entities,
   scoring, highlighting, the full pipeline, the demo app and the evaluation tools.
 - Contracts never leave the machine. Only public CUAD/LEDGAR data is used on the cloud GPU, and inference runs
   offline.
@@ -218,7 +218,7 @@ Proposed; we will adjust it to the course's final deadline.
 # Python 3.11 environment with the packages in requirements (torch, transformers, sentence-transformers,
 # spacy + en_core_web_sm, underthesea, pymupdf, python-docx, scikit-learn, streamlit, modal)
 
-python -m pytest                                   # 180 tests
+python -m pytest                                   # 229 tests
 
 # Data and models (data/ and artifacts/ are not in git: they are large)
 kaggle datasets download konradb/atticus-open-contract-dataset-aok-beta -p data/cuad --unzip

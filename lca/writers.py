@@ -117,7 +117,7 @@ def write_pdf(source: Path, doc: Document, findings: list[Finding], out: Path) -
 
 
 # ---------------------------------------------------------------- report
-REPORT_COLUMNS = ["Vị trí", "Câu trích xuất", "Loại rủi ro", "Thực thể", "Mức"]
+REPORT_COLUMNS = ["Vị trí", "Câu trích xuất", "Loại rủi ro", "Thực thể", "Mức", "Giải thích"]
 DISCLAIMER = "Lưu ý: kết quả chỉ mang tính hỗ trợ sàng lọc, không thay thế tư vấn pháp lý."
 NO_FINDINGS = "Không phát hiện điều khoản rủi ro nào."
 
@@ -133,6 +133,7 @@ def report_rows(findings: list[Finding]) -> list[dict[str, str]]:
         "Loại rủi ro": f.label.vi,
         "Thực thể": ", ".join(f"{e.text} ({e.kind})" for e in f.entities),
         "Mức": f.level.vi,
+        "Giải thích": f.reason,
     } for f in sort_findings(findings)]
 
 
