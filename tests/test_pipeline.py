@@ -50,7 +50,14 @@ def test_end_to_end_docx_with_stub_detectors(sample_docx, tmp_path):
 
 def test_report_columns_match_spec(sample_docx, tmp_path):
     paths = export(analyze(sample_docx, AnalysisContext(), [RegexDetector()]), tmp_path / "out")
-    assert list(rows(paths["report"])[0]) == ["Vị trí", "Câu trích xuất", "Loại rủi ro", "Thực thể", "Mức"]
+    assert list(rows(paths["report"])[0]) == ["Vị trí", "Câu trích xuất", "Loại rủi ro", "Thực thể", "Mức",
+                                              "Giải thích"]
+
+
+def test_report_explains_each_finding(sample_docx, tmp_path):
+    paths = export(analyze(sample_docx, AnalysisContext(), [RegexDetector()]), tmp_path / "out")
+    penalty = next(r for r in rows(paths["report"]) if "12%" in r["Câu trích xuất"])
+    assert "vượt trần phạt 8%" in penalty["Giải thích"] and "regex" in penalty["Giải thích"]
 
 
 def test_report_sorted_high_first(sample_docx, tmp_path):
