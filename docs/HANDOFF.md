@@ -47,6 +47,9 @@ Last updated: 2026-11-12. Read this first when resuming.
 
 ### 2. Website at kodingkat.xyz/TMG: **live** (backend on Modal, not Lambda)
 
+Redeployed 2026-11-12 from `main` at `a15d2c7` (build, smoke and deploy all passed; a live analysis
+returned the same notes as the local pipeline). The page files did not change.
+
 Spec `2026-10-31-tmg-web-design.md`, plan `2026-10-31-tmg-website.md`. The plan's Lambda backend
 was dropped on 2026-11-09: this AWS account (Free plan) caps Lambda memory at **512 MB**, and the
 app needs ~4–6 GB (XLM-R alone is 1.1 GB). The person chose Modal. All AWS resources made for it
