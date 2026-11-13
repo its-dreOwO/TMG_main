@@ -1,6 +1,6 @@
 # Handoff: Legal Clause Analyzer (TMG, Group 5)
 
-Last updated: 2026-11-12. Read this first when resuming.
+Last updated: 2026-11-13. Read this first when resuming.
 
 ## Where things are
 
@@ -20,7 +20,7 @@ Last updated: 2026-11-12. Read this first when resuming.
 ### 1. Pipeline (plan `2026-10-31-legal-clause-analyzer.md`): Tasks 1–12 done, Task 13 partly done
 
 - **Working:** read docx/pdf → segment → regex + TF-IDF + Legal-BERT/XLM-R + STS → entities → Cao/Trung bình/Thấp → highlighted docx/pdf + CSV; CLI `python -m lca.cli`; Streamlit `app.py`.
-- **Tests:** 229 passing (`/opt/study/.venv/bin/python -m pytest -q`).
+- **Tests:** 240 passing (`/opt/study/.venv/bin/python -m pytest -q`).
 - **Fixed 2026-11-11** after running six real documents (3 English PDFs, 3 Vietnamese Word files):
   - the reader goes by file content, so a Word file saved as `.pdf` (or the reverse) is read
     correctly and the highlighted output takes the real type's extension;
@@ -33,12 +33,20 @@ Last updated: 2026-11-12. Read this first when resuming.
   - a negation counts when it *ends* within 15 characters before the match, so
     "not be subject to any penalty" and "không phải chịu tiền phạt" are no longer flagged.
 - **Test-set macro F1 over the risk groups:** TF-IDF+SVM 0.898 (best), Legal-BERT 0.891, XLM-R 0.882. The Transformers win 4 of 5 groups but are weak on penalty (only 314 training rows).
-- **Task 13 is blocked on the team:** 2 real contracts in `data/contracts/` plus at least 2 independent labelings, using `python -m lca.eval.annotate template|consensus`, then `python -m lca.eval.compare`. The evaluation code is done and tested.
+- **Fixed 2026-11-13:**
+  - title lines ("Điều 8. Phạt vi phạm", "3.1. Góp vốn") are marked `Segment.heading` and never reported;
+  - a sentence flagged by STS alone needs a score ≥ 0.60 (`STS_ONLY_MIN` in `lca/scoring.py`); STS alone
+    counts as penalty evidence for the 8% cap / percent rules only from 0.70 (`STS_PENALTY_MIN`);
+  - PDF ligatures (ﬁ, ﬂ, …) are expanded by the segmenter, so "conﬁdential" matches the regex;
+  - regex: "giữ bí mật", and training-cost repayment ("hoàn trả … phí đào tạo") as indemnity;
+    "100%" counts as full liability (Cao).
+- **Two sample contracts** (the brief's "lấy 2 mẫu hợp đồng"): `samples/` (tracked), with the highlighted
+  .docx and CSV outputs and a README. The person said the RQ1–RQ3 evaluation is not needed.
+- **Task 13 (optional, not needed per the person):** 2 real contracts in `data/contracts/` plus at least 2 independent labelings, using `python -m lca.eval.annotate template|consensus`, then `python -m lca.eval.compare`. The evaluation code is done and tested.
 - **Final whole-branch code review:** not done yet.
 - **Known issues:**
-  - heading-only lines ("Điều 8. Phạt vi phạm") get flagged;
-  - STS gives LOW false alarms on neutral sentences (81% of the findings on those six documents
-    were Thấp from STS alone);
+  - some STS-only Thấp false alarms remain (scores 0.60–0.72), e.g. "Hình thức trả lương: Chuyển khoản…"
+    as penalty in the sample labour contract;
   - section locations go wrong on some English PDFs (clause 5.1 reported as "Section 3.6");
   - the entity step tags non-parties as PARTY ("Confidential Information", "the Commencement Date");
   - a finding holds one label, so a penalty inside an indemnity sentence shows only in the note;

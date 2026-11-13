@@ -99,3 +99,27 @@ def test_payment_share_is_not_an_over_cap_penalty(stray):
     f = score(seg(text), dets, extract_entities(text, "vi"), AnalysisContext())
     assert f.label == RiskLabel.INDEMNITY and f.level == Level.MEDIUM
     assert "8%" not in f.reason
+
+
+def test_weak_similarity_alone_is_not_reported():
+    dets = [Detection("sts", RiskLabel.CONFIDENTIALITY, 0.52), Detection("sts", RiskLabel.INDEMNITY, 0.45)]
+    assert score(seg("Hai bên thống nhất ký kết hợp đồng với các điều khoản sau:"), dets, [],
+                 AnalysisContext()) is None
+
+
+def test_strong_similarity_alone_is_reported_low():
+    text = "Bên B phải trả thêm một khoản bằng một phần mười giá trị đơn hàng khi giao trễ"
+    f = score(seg(text), [Detection("sts", RiskLabel.PENALTY, 0.73)], [], AnalysisContext())
+    assert f is not None and f.label == RiskLabel.PENALTY and f.level == Level.LOW
+
+
+def test_moderate_similarity_alone_does_not_trigger_penalty_cap():
+    text = "Bên A thanh toán bằng chuyển khoản thành ba đợt: 30% sau khi ký, 40% sau khi nghiệm thu."
+    f = score(seg(text), [Detection("sts", RiskLabel.PENALTY, 0.64)], extract_entities(text, "vi"),
+              AnalysisContext())
+    assert f.level == Level.LOW and "8%" not in f.reason
+
+
+def test_full_repayment_of_training_cost_is_high():
+    text = "Nhân viên phải hoàn trả lại 100% phí đào tạo và các khoản chế độ đã được nhận."
+    assert run(text, RiskLabel.INDEMNITY, AnalysisContext("labour")).level == Level.HIGH

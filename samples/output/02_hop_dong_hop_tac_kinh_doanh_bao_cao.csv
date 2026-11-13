@@ -1,0 +1,6 @@
+﻿Vị trí,Câu trích xuất,Loại rủi ro,Thực thể,Mức,Giải thích
+Điều 8.2,Bên nào vi phạm thỏa thuận gây thiệt hại cho bên kia (trừ trong trường hợp bất khả kháng) thì phải bồi thường toàn bộ thiệt hại xảy ra và chịu phạt vi phạm bằng 10% giá trị của thỏa thuận.,Bồi thường thiệt hại,10% (PERCENT),Cao,"Bồi thường thiệt hại; mức 10%; vượt trần phạt 8% (Điều 301 Luật Thương mại 2005) (phát hiện bởi: regex, sts, xlmr)."
+Điều 8.3,Đảm bảo bí mật mọi thông tin liên quan tới quá trình sản xuất kinh doanh.,Bảo mật,,Trung bình,"Bảo mật (phát hiện bởi: sts, xlmr)."
+Điều 9.1,Thỏa thuận chấm dứt khi hết thời hạn theo quy định tại Điều 2 thỏa thuận này hoặc các trường hợp khác theo qui định của pháp luật.,Chấm dứt hợp đồng,,Trung bình,"Chấm dứt hợp đồng (phát hiện bởi: sts, xlmr)."
+Điều 9.1,"Khi kết thúc Thỏa thuận, hai bên sẽ làm biên bản thanh lý thỏa thuận.",Chấm dứt hợp đồng,,Thấp,Chấm dứt hợp đồng (phát hiện bởi: sts).
+,"Lưu ý: kết quả chỉ mang tính hỗ trợ sàng lọc, không thay thế tư vấn pháp lý.",,,,

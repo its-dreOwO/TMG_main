@@ -96,3 +96,20 @@ def test_definition_sentences_recognised(text):
 ])
 def test_obligations_are_not_definitions(text):
     assert not is_definition(text)
+
+
+def test_keep_secret_is_confidentiality():
+    from lca.types import RiskLabel
+    out = RegexDetector().predict(["Bên A giữ bí mật mã nguồn của Bên B trong thời hạn 02 năm."])
+    assert RiskLabel.CONFIDENTIALITY in {d.label for d in out[0]}
+
+
+@pytest.mark.parametrize("text", [
+    "Nếu sau khi kết thúc khóa đào tạo mà nhân viên không tiếp tục hợp tác với Công ty thì nhân viên "
+    "phải hoàn trả lại 100% phí đào tạo và các khoản chế độ đã được nhận.",
+    "Người lao động phải bồi thường chi phí đào tạo nếu nghỉ việc trước thời hạn cam kết.",
+    "The Employee shall repay all training costs if he resigns within two years.",
+])
+def test_training_cost_repayment_is_indemnity(text):
+    out = RegexDetector().predict([text])[0]
+    assert any(d.label is RiskLabel.INDEMNITY and d.score == 1.0 for d in out)

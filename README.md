@@ -29,7 +29,7 @@ original file with those sentences highlighted red, plus a summary table.
 | 9 | Red highlights + comments in the original Word/PDF; CSV report | ✅ Done |
 | 10 | Command-line tool and Streamlit demo (runs only on the local machine) | ✅ Done |
 | 11 | Evaluation tools: annotation templates, Cohen's Kappa, method comparison | ✅ Code done |
-| 12 | Label the 2 sample contracts and answer RQ1–RQ3 on them | ⏳ Waiting on labelled contracts |
+| 12 | Run the tool on 2 sample contracts (1 labour, 1 commercial): see [`samples/`](samples/README.md) | ✅ Done |
 
 ### How it works
 
@@ -116,12 +116,15 @@ Vietnamese to English before classifying, looks weak: the local translation mode
 ```
 
 The three real risks are found and ranked as expected: 12% is above the 8% cap so it is **Cao**, uncapped
-indemnity is **Cao**, and a 2-year confidentiality term is **Trung bình**. The last two lines are false alarms
-we will fix (see Next steps).
+indemnity is **Cao**, and a 2-year confidentiality term is **Trung bình**. The last two lines were false alarms;
+both are fixed (headings are skipped, and a sentence flagged by similarity alone needs a score of at least 0.60).
+
+**The two sample contracts** (a labour contract and a business cooperation agreement) are in
+[`samples/`](samples/README.md), with the highlighted Word files and CSV reports the tool produced for each.
 
 ### Quality
 
-- **229 automated tests**, all passing. They cover file reading, segmentation, every detector, entities,
+- **240 automated tests**, all passing. They cover file reading, segmentation, every detector, entities,
   scoring, highlighting, the full pipeline, the demo app and the evaluation tools.
 - Contracts never leave the machine. Only public CUAD/LEDGAR data is used on the cloud GPU, and inference runs
   offline.
@@ -189,9 +192,10 @@ questions. Since then we have built and tested the whole pipeline.
 
 ### Planned improvements
 
-- **Stop flagging headings.** Lines like "Điều 8. Phạt vi phạm" are titles, not obligations.
-- **Reduce similarity false alarms** on neutral sentences ("Hợp đồng có hiệu lực…"), e.g. by raising its
-  threshold for Vietnamese or requiring agreement with another method for the Thấp level.
+- ~~**Stop flagging headings.**~~ Done: title lines such as "Điều 8. Phạt vi phạm" are no longer reported.
+- ~~**Reduce similarity false alarms.**~~ Done: a sentence flagged by similarity alone needs a score of at
+  least 0.60, and similarity alone no longer triggers the 8% penalty cap below 0.70. On the sample business
+  contract the findings went from 27 to 4 with no real risk lost. Some Thấp false alarms remain.
 - **Better Vietnamese penalty and confidentiality detection.** Add a small set of self-labelled Vietnamese
   sentences (planned in the proposal) and more Vietnamese reference clauses.
 - **More penalty data.** Penalty is the smallest group (388 examples in total) and the weakest for the
@@ -218,7 +222,7 @@ Proposed; we will adjust it to the course's final deadline.
 # Python 3.11 environment with the packages in requirements (torch, transformers, sentence-transformers,
 # spacy + en_core_web_sm, underthesea, pymupdf, python-docx, scikit-learn, streamlit, modal)
 
-python -m pytest                                   # 229 tests
+python -m pytest                                   # 240 tests
 
 # Data and models (data/ and artifacts/ are not in git: they are large)
 kaggle datasets download konradb/atticus-open-contract-dataset-aok-beta -p data/cuad --unzip

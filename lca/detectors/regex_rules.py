@@ -21,9 +21,12 @@ CONTEXT_PATTERNS: dict[RiskLabel, list[str]] = {
     RiskLabel.INDEMNITY: [
         r"bồi thường.{0,60}(toàn bộ|mọi|không giới hạn)",
         r"indemnif\w*.{0,80}(any and all|all (losses|claims|damages)|without limit\w*|unlimited|uncapped)",
+        # Repaying training costs on leaving early (Điều 40, 62 Bộ luật Lao động 2019).
+        r"(hoàn trả|bồi hoàn|bồi thường).{0,40}(chi phí|phí) đào tạo",
+        r"(repay|reimburse)\w*.{0,40}training (costs?|expenses?|fees?)",
     ],
     RiskLabel.CONFIDENTIALITY: [
-        r"(bảo mật|thông tin mật|không được tiết lộ).{0,80}(\d+\s?(năm|tháng)|vô thời hạn)",
+        r"(bảo mật|giữ bí mật|thông tin mật|không được tiết lộ).{0,80}(\d+\s?(năm|tháng)|vô thời hạn)",
         r"(confidential\w*|non-disclosure).{0,80}(\d+\s?(\(\d+\)\s?)?(years?|months?)|indefinitely|perpetu\w*)",
     ],
 }
@@ -34,11 +37,11 @@ KEYWORDS: dict[RiskLabel, list[str]] = {
         r"penalt(y|ies)", "liquidated damages",
     ],
     RiskLabel.INDEMNITY: [
-        "bồi thường", "toàn bộ thiệt hại",
+        "bồi thường", "toàn bộ thiệt hại", r"(chi phí|phí) đào tạo",
         r"indemnif(y|ies|ication)", "indemnity", "hold harmless", "uncapped", "unlimited liability",
     ],
     RiskLabel.CONFIDENTIALITY: [
-        "bảo mật", "thông tin mật", "không tiết lộ", "không được tiết lộ",
+        "bảo mật", "giữ bí mật", "thông tin mật", "không tiết lộ", "không được tiết lộ",
         r"confidential(ity)?", "non-disclosure",
     ],
     RiskLabel.TERMINATION: [

@@ -16,6 +16,12 @@ from lca.types import Document, Segment
 HEADING_RE = re.compile(r"^(Điều|Khoản|Article|Section|Clause)\s+(\d+(?:\.\d+)*)", re.IGNORECASE)
 SUBCLAUSE_RE = re.compile(r"^(\d+(?:\.\d+)+)\.?\s")
 MARKER_RE = re.compile(r"(?:^|(?<=[\s:;]))(?:[a-zđ]|\d{1,2}|[ivx]{1,4})\)(?=\s)")
+# A title line: an Điều/Article or 1.2 marker followed by a few words, no digits and no
+# sentence-ending punctuation ("Điều 8. Phạt vi phạm", "3.1. Góp vốn").
+TITLE_MAX_WORDS = 10
+TITLE_TAIL_RE = re.compile(r"^[\s.:\-–—)]*(?P<rest>.*)$")
+LIGATURES = str.maketrans({"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi",
+                           "\ufb04": "ffl", "\ufb05": "st", "\ufb06": "st"})
 PREAMBLE = "Mở đầu"
 MIN_ALPHA_FOR_LANG = 20
 VI_RATIO = 0.03
@@ -43,7 +49,7 @@ def _normalize_with_map(raw: str) -> tuple[str, list[int], list[int]]:
                 starts.append(pending[0])
                 ends.append(pending[1])
                 pending = None
-            for ch in unicodedata.normalize("NFC", chunk):
+            for ch in unicodedata.normalize("NFC", chunk).translate(LIGATURES):
                 out.append(ch)
                 starts.append(i)
                 ends.append(j)
@@ -53,7 +59,7 @@ def _normalize_with_map(raw: str) -> tuple[str, list[int], list[int]]:
 
 def normalize(text: str) -> str:
     """Same result as _normalize_with_map(text)[0], but fast enough for bulk data."""
-    return " ".join(unicodedata.normalize("NFC", text).split())
+    return " ".join(unicodedata.normalize("NFC", text).translate(LIGATURES).split())
 
 
 def detect_lang(text: str) -> Literal["vi", "en"]:
@@ -112,6 +118,16 @@ def _trim(norm: str, s: int, e: int) -> tuple[int, int]:
     return s, e
 
 
+def is_title(norm: str) -> bool:
+    """True for a heading line like "Điều 8. Phạt vi phạm" (marker plus a short, bare title)."""
+    m = HEADING_RE.match(norm) or SUBCLAUSE_RE.match(norm)
+    if not m:
+        return False
+    rest = TITLE_TAIL_RE.match(norm[m.end():]).group("rest").strip()
+    return (bool(rest) and len(rest.split()) <= TITLE_MAX_WORDS and not re.search(r"\d", rest)
+            and rest[-1] not in ".;:,…" and "……" not in rest)
+
+
 # ---------------------------------------------------------------- segmenting
 def segment(doc: Document, mode: Literal["clause", "sentence"]) -> list[Segment]:
     doc_lang = detect_lang(" ".join(b.text for b in doc.blocks))
@@ -147,8 +163,10 @@ def _sentence_segments(doc: Document, doc_lang: str) -> list[Segment]:
     keyword = "Điều" if doc_lang == "vi" else "Section"
     location = PREAMBLE
 
+    title = False
+
     def add(text: str, span: tuple[int, int, int]):
-        segs.append(Segment(len(segs), text, location, [span], _lang_or_default(text, doc_lang)))
+        segs.append(Segment(len(segs), text, location, [span], _lang_or_default(text, doc_lang), title))
 
     for block in doc.blocks:
         norm, starts, ends = _normalize_with_map(block.text)
@@ -162,6 +180,7 @@ def _sentence_segments(doc: Document, doc_lang: str) -> list[Segment]:
         elif sub:
             location = f"{keyword} {sub.group(1)}"
         lang = _lang_or_default(norm, doc_lang)
+        title = is_title(norm)
 
         def raw_span(s: int, e: int) -> tuple[int, int, int]:
             return (block.index, starts[s], ends[e - 1])

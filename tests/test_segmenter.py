@@ -101,3 +101,23 @@ def test_short_segment_uses_document_language():
 def test_seg_ids_sequential():
     segs = segment(doc(VI), "sentence")
     assert [s.seg_id for s in segs] == list(range(len(segs)))
+
+
+def test_short_article_titles_are_marked_as_headings():
+    lines = ["Điều 8. Phạt vi phạm", "3.1. Góp vốn", "Article 8. English summary of key terms",
+             "8.2. Bên B phải chịu phạt 12% giá trị hợp đồng nếu giao hàng chậm.",
+             "Điều 6. Bên A có quyền đơn phương chấm dứt hợp đồng.",
+             "3.2.2 Chi phí cho hoạt động sản xuất bao gồm:",
+             "Phạt vi phạm"]  # a bare line without an Điều/Article marker is not a title
+    by_line = {}
+    for sg in segment(doc(lines), "sentence"):
+        by_line.setdefault(sg.spans[0][0], set()).add(sg.heading)
+    assert [by_line[i] for i in range(len(lines))] == [{True}] * 3 + [{False}] * 4
+
+
+def test_pdf_ligatures_are_expanded():
+    d = doc(["All conﬁdential information must be kept secret indeﬁnitely."])
+    s = segment(d, "sentence")[0]
+    assert "confidential" in s.text and "indefinitely" in s.text
+    assert raw_of(d, s) == d.blocks[0].text
+    assert normalize("conﬁdential") == "confidential"

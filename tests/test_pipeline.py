@@ -157,7 +157,7 @@ def test_definition_sentence_is_not_reported_by_any_detector(tmp_path):
         name = "sts"
 
         def predict(self, texts):
-            return [[Detection("sts", RiskLabel.CONFIDENTIALITY, 0.5)] for _ in texts]
+            return [[Detection("sts", RiskLabel.CONFIDENTIALITY, 0.8)] for _ in texts]
 
     src = _docx(tmp_path / "d.docx", [
         "1.14 “Program Data” means the data set forth on Exhibit A in the possession of University.",
@@ -166,3 +166,10 @@ def test_definition_sentence_is_not_reported_by_any_detector(tmp_path):
     res = analyze(src, AnalysisContext(), [FlagsEverything()])
     assert [f.segment.text for f in res.findings] == [
         "The Receiving Party shall maintain in confidence all Confidential Information."]
+
+
+def test_article_title_is_not_reported(sample_docx):
+    res = analyze(sample_docx, AnalysisContext(), [RegexDetector()])
+    texts = [f.segment.text for f in res.findings]
+    assert not any(t.endswith("Phạt vi phạm") for t in texts)
+    assert any("12%" in t for t in texts)

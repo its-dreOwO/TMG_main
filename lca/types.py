@@ -63,6 +63,7 @@ class Segment:
     location: str
     spans: list[tuple[int, int, int]]
     lang: Literal["vi", "en"]
+    heading: bool = False  # an article title such as "Điều 8. Phạt vi phạm": never reported
 
 
 @dataclass(frozen=True)

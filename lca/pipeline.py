@@ -75,7 +75,7 @@ def analyze(path: Path, ctx: AnalysisContext, detectors: list[Detector],
             merged[i].extend(found)
     findings = []
     for seg, dets in zip(segments, merged):
-        if dets and not is_definition(seg.text):
+        if dets and not seg.heading and not is_definition(seg.text):
             finding = score(seg, dets, extract_entities(seg.text, seg.lang), ctx)
             if finding:
                 findings.append(finding)
